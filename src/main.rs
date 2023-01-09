@@ -4,6 +4,7 @@ use anyhow::{Context, Result};
 use argh::FromArgs;
 
 mod smoke;
+mod utils;
 
 #[derive(FromArgs)]
 /// Protohackers binary
