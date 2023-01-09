@@ -2,7 +2,9 @@ use std::{net::SocketAddr, str::FromStr};
 
 use anyhow::{Context, Result};
 use argh::FromArgs;
+use futures_lite::FutureExt;
 
+mod means;
 mod smoke;
 mod utils;
 
@@ -29,7 +31,8 @@ fn main() -> Result<()> {
     .context("unable to parse network address")?;
 
     let fut = match options.kind.as_ref() {
-        "smoke" => crate::smoke::run(address),
+        "smoke" => crate::smoke::run(address).boxed(),
+        "means" => crate::means::run(address).boxed(),
         _ => panic!("invalid choice"),
     };
 
