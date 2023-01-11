@@ -1,17 +1,11 @@
 use anyhow::{anyhow, Context, Result};
 use async_io::Async;
 use asynchronous_codec::{Framed, LinesCodec};
-use futures_lite::{AsyncReadExt, AsyncWriteExt, StreamExt};
+use futures_lite::{AsyncWriteExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::net::{SocketAddr, TcpStream};
 
-use crate::utils::run_tcp_server_with;
-
-fn split(stream: Async<TcpStream>) -> Result<(Async<TcpStream>, Async<TcpStream>)> {
-    let inner = stream.into_inner().context("to get inner stream")?;
-
-    Ok((Async::new(inner.try_clone()?)?, Async::new(inner)?))
-}
+use crate::utils::{dup, run_tcp_server_with};
 
 #[derive(Deserialize, Debug)]
 struct Request {
@@ -71,7 +65,7 @@ pub async fn run(address: SocketAddr) -> Result<()> {
     log::info!("running prime");
 
     run_tcp_server_with(address, |stream, _addr| async move {
-        let (read, mut write) = split(stream).expect("to split");
+        let (read, mut write) = dup(stream).expect("to split");
         let mut framed = Framed::new(read, LinesCodec {});
         while let Some(Ok(line)) = framed.next().await {
             if let Err(e) = handle_prime_request(&mut write, line).await {

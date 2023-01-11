@@ -4,6 +4,7 @@ use anyhow::{Context, Result};
 use argh::FromArgs;
 use futures_lite::FutureExt;
 
+mod chat;
 mod means;
 mod prime;
 mod smoke;
@@ -35,6 +36,7 @@ fn main() -> Result<()> {
         "smoke" => crate::smoke::run(address).boxed(),
         "prime" => crate::prime::run(address).boxed(),
         "means" => crate::means::run(address).boxed(),
+        "chat" => crate::chat::run(address).boxed(),
         _ => panic!("invalid choice"),
     };
 

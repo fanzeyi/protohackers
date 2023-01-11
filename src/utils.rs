@@ -19,3 +19,9 @@ where
 
     Ok(())
 }
+
+pub fn dup(stream: Async<TcpStream>) -> Result<(Async<TcpStream>, Async<TcpStream>)> {
+    let inner = stream.into_inner().context("to get inner stream")?;
+
+    Ok((Async::new(inner.try_clone()?)?, Async::new(inner)?))
+}
