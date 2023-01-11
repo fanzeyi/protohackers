@@ -5,6 +5,7 @@ use argh::FromArgs;
 use futures_lite::FutureExt;
 
 mod means;
+mod prime;
 mod smoke;
 mod utils;
 
@@ -32,6 +33,7 @@ fn main() -> Result<()> {
 
     let fut = match options.kind.as_ref() {
         "smoke" => crate::smoke::run(address).boxed(),
+        "prime" => crate::prime::run(address).boxed(),
         "means" => crate::means::run(address).boxed(),
         _ => panic!("invalid choice"),
     };
