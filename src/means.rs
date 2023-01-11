@@ -3,7 +3,6 @@ use std::{collections::BTreeMap, net::SocketAddr};
 
 use anyhow::Result;
 use futures_lite::{AsyncReadExt, AsyncWriteExt};
-use smol::spawn;
 
 use crate::utils::run_tcp_server_with;
 
@@ -42,29 +41,26 @@ impl State {
 }
 
 pub async fn run(address: SocketAddr) -> Result<()> {
-    run_tcp_server_with(address, |mut stream, _addr| {
-        spawn(async move {
-            let mut request = [0; 9];
-            let mut state = State::new();
+    run_tcp_server_with(address, |mut stream, _addr| async move {
+        let mut request = [0; 9];
+        let mut state = State::new();
 
-            while let Ok(_) = stream.read_exact(&mut request).await {
-                log::debug!("raw bytes: {request:02X?}");
-                let ops = char::from(request[0]);
-                let lhs = i32::from_be_bytes(request[1..5].try_into().expect("correct size"));
-                let rhs = i32::from_be_bytes(request[5..9].try_into().expect("correct size"));
-                log::info!("received request op='{ops}' lhs='{lhs}' rhs='{rhs}'");
+        while let Ok(_) = stream.read_exact(&mut request).await {
+            log::debug!("raw bytes: {request:02X?}");
+            let ops = char::from(request[0]);
+            let lhs = i32::from_be_bytes(request[1..5].try_into().expect("correct size"));
+            let rhs = i32::from_be_bytes(request[5..9].try_into().expect("correct size"));
+            log::info!("received request op='{ops}' lhs='{lhs}' rhs='{rhs}'");
 
-                match ops {
-                    'I' => state.insert(lhs, rhs),
-                    'Q' => {
-                        let result = state.query(lhs, rhs).unwrap_or(0).to_be_bytes();
-                        stream.write_all(&result).await.ok();
-                    }
-                    _ => break,
+            match ops {
+                'I' => state.insert(lhs, rhs),
+                'Q' => {
+                    let result = state.query(lhs, rhs).unwrap_or(0).to_be_bytes();
+                    stream.write_all(&result).await.ok();
                 }
+                _ => break,
             }
-        })
-        .detach();
+        }
     })
     .await?;
     Ok(())
